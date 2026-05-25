@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYO_DLT – ภาพรวม</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-box">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 3H4a2 2 0 00-2 2v14a2 2 0 002 2h16a2 2 0 002-2V5a2 2 0 00-2-2zm-7 3h2v2h-2V6zm0 4h2v2h-2v-2zm-4-4h2v2H9V6zm0 4h2v2H9v-2zm-4 0h2v2H5v-2zm0-4h2v2H5V6zm14 12H5v-2h14v2zm0-4H5v-2h14v2zm0-4h-2v-2h2v2zm0-4h-2V6h2v2z"/></svg>
+        </div>
+        <div class="logo-text">
+          <h2>PYO_DLT</h2>
+          <span>ระบบครุภัณฑ์คอมพิวเตอร์</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-avatar">?</div>
+      <div class="user-info">
+        <h4 id="sidebar-name">Loading...</h4>
+        <span id="sidebar-role"></span>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <button id="logout-btn" class="nav-item" style="width:100%;background:rgba(239,68,68,0.15);color:#fca5a5;border:none;cursor:pointer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        ออกจากระบบ
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="app-header">
+      <button id="sidebar-toggle" style="display:none;background:none;border:none;cursor:pointer;padding:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="header-title">
+        <h1>ภาพรวมระบบ</h1>
+        <p>สรุปสถานะครุภัณฑ์คอมพิวเตอร์ทั้งหมด</p>
+      </div>
+      <div class="header-spacer"></div>
+      <button class="btn btn-primary btn-sm" onclick="window.location.href='all-devices.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        เพิ่มครุภัณฑ์
+      </button>
+    </header>
+
+    <div class="page-content">
+      <div id="stats-grid" class="stats-grid"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px" id="charts-row">
+        <!-- Room summary -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">สรุปตามห้อง / ฝ่าย</span>
+          </div>
+          <div class="card-body" id="room-summary"></div>
+        </div>
+        <!-- Recent -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">รายการล่าสุด</span>
+          </div>
+          <div class="card-body" id="recent-list" style="padding:0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<div id="sidebar-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99"></div>
+
+<script src="../js/data.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ui.js"></script>
+<script>
+AUTH.requireAuth();
+document.getElementById('sidebar-nav').innerHTML = generateSidebarNav('dashboard');
+setupSidebar();
+
+function render() {
+  const stats = DATA.getStats();
+  const statCards = [
+    { num: stats.total, label: 'ครุภัณฑ์ทั้งหมด', color: '#1a3c6e', bg: '#eff6ff', icon: `<svg viewBox="0 0 24 24" fill="#1a3c6e"><path d="M20 3H4a2 2 0 00-2 2v14a2 2 0 002 2h16a2 2 0 002-2V5a2 2 0 00-2-2zm-7 3h2v2h-2V6zm-4 0h2v2H9V6zm-4 4h2v2H5v-2zm0-4h2v2H5V6zm14 12H5v-2h14v2zm0-4H5v-2h14v2zm0-4h-2v-2h2v2zm0-4h-2V6h2v2z"/></svg>` },
+    { num: stats.ready, label: 'พร้อมใช้', color: '#15803d', bg: '#dcfce7', icon: `<svg viewBox="0 0 24 24" fill="#15803d"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>` },
+    { num: stats.pending, label: 'รอตรวจสอบ', color: '#a16207', bg: '#fef9c3', icon: `<svg viewBox="0 0 24 24" fill="#a16207"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>` },
+    { num: stats.repair, label: 'ส่งซ่อม', color: '#1d4ed8', bg: '#dbeafe', icon: `<svg viewBox="0 0 24 24" fill="#1d4ed8"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>` },
+    { num: stats.broken, label: 'ชำรุด', color: '#b91c1c', bg: '#fee2e2', icon: `<svg viewBox="0 0 24 24" fill="#b91c1c"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>` },
+  ];
+
+  document.getElementById('stats-grid').innerHTML = statCards.map(s => `
+    <div class="stat-card">
+      <div class="stat-icon" style="background:${s.bg}">${s.icon}</div>
+      <div>
+        <div class="num">${s.num}</div>
+        <div class="label">${s.label}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Room summary
+  const roomHTML = DATA.ROOMS.map(r => {
+    const count = stats.rooms[r.id] || 0;
+    const pct = stats.total > 0 ? Math.round(count / stats.total * 100) : 0;
+    return `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <span style="font-size:20px;width:28px;text-align:center">${r.icon}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:600">${r.name}</span>
+            <span style="font-size:13px;color:var(--text-muted)">${count} เครื่อง</span>
+          </div>
+          <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
+            <div style="height:100%;background:${r.color};border-radius:4px;width:${pct}%;transition:width 0.8s ease"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('room-summary').innerHTML = roomHTML || '<p style="color:var(--text-muted);font-size:14px">ยังไม่มีข้อมูล</p>';
+
+  // Recent
+  const recent = DATA.getAll().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 6);
+  const recentHTML = recent.length ? recent.map(d => {
+    const room = DATA.getRoomInfo(d.room);
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border)">
+        <span style="font-size:20px">${room.icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.username || '-'}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${d.brand}</div>
+        </div>
+        ${statusBadge(d.status)}
+      </div>`;
+  }).join('') : '<div class="empty-state" style="padding:40px"><p>ยังไม่มีข้อมูล</p></div>';
+  document.getElementById('recent-list').innerHTML = recentHTML;
+}
+
+render();
+</script>
+</body>
+</html>
