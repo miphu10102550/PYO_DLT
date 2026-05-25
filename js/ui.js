@@ -103,15 +103,10 @@ function setupImageUpload(areaId, previewId, onImages) {
         if (!prev) return;
         prev.innerHTML = images.map((src, i) => `
       <div class="img-preview-item">
-        <img src="${src}" alt="img">
+        <img src="${src}" alt="img" onclick="viewImage('${src.replace(/'/g, "\\'")}')" style="cursor:zoom-in">
         <div class="remove-img" onclick="removeImg(${i})">×</div>
       </div>
     `).join('');
-        // Attach click handlers to open image viewer
-        Array.from(prev.querySelectorAll('img')).forEach(img => {
-            img.style.cursor = 'zoom-in';
-            img.addEventListener('click', (e) => openImageFromElement(e.target));
-        });
     };
 
     window.removeImg = (idx) => {
@@ -131,8 +126,10 @@ function setupImageUpload(areaId, previewId, onImages) {
         });
     }
 
-    area.addEventListener('dragover', (e) => { e.preventDefault();
-        area.classList.add('drag-over'); });
+    area.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        area.classList.add('drag-over');
+    });
     area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
     area.addEventListener('drop', async(e) => {
         e.preventDefault();
@@ -149,8 +146,10 @@ function setupImageUpload(areaId, previewId, onImages) {
 
     return {
         getImages: () => images,
-        setImages: (imgs) => { images = imgs || [];
-            renderPreview(); }
+        setImages: (imgs) => {
+            images = imgs || [];
+            renderPreview();
+        }
     };
 }
 
@@ -224,15 +223,15 @@ function buildDeviceFormHTML(device) {
 // Collect form values
 function collectDeviceForm() {
     return {
-        username: document.getElementById('f-username') ? .value.trim(),
-        brand: document.getElementById('f-brand') ? .value,
-        serial: document.getElementById('f-serial') ? .value.trim(),
-        monitorSN: document.getElementById('f-monitor') ? .value.trim(),
-        ip: document.getElementById('f-ip') ? .value.trim(),
-        room: document.getElementById('f-room') ? .value,
-        status: document.getElementById('f-status') ? .value,
-        condition: document.getElementById('f-condition') ? .value,
-        note: document.getElementById('f-note') ? .value.trim(),
+        username: document.getElementById('f-username')?.value.trim() || '',
+        brand: document.getElementById('f-brand')?.value || '',
+        serial: document.getElementById('f-serial')?.value.trim() || '',
+        monitorSN: document.getElementById('f-monitor')?.value.trim() || '',
+        ip: document.getElementById('f-ip')?.value.trim() || '',
+        room: document.getElementById('f-room')?.value || '',
+        status: document.getElementById('f-status')?.value || '',
+        condition: document.getElementById('f-condition')?.value || '',
+        note: document.getElementById('f-note')?.value.trim() || '',
     };
 }
 
@@ -281,58 +280,16 @@ function confirmDialog(msg, onConfirm) {
     </div>`;
     document.body.appendChild(overlay);
     document.getElementById('confirm-cancel').onclick = () => overlay.remove();
-    document.getElementById('confirm-ok').onclick = () => { overlay.remove();
-        onConfirm(); };
+    document.getElementById('confirm-ok').onclick = () => {
+        overlay.remove();
+        onConfirm();
+    };
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// Image viewer: open clicked image and navigate within its grid
-function openImageFromElement(imgEl) {
-    if (!imgEl) return;
-    const grid = imgEl.closest('.img-preview-grid');
-    const imgs = grid ? Array.from(grid.querySelectorAll('img')).map(i => i.src) : [imgEl.src];
-    let idx = imgs.indexOf(imgEl.src);
-
-    const overlay = document.createElement('div');
-    overlay.className = 'image-viewer-overlay';
-    overlay.innerHTML = `
-    <div class="viewer">
-      <button class="iv-btn iv-prev">‹</button>
-      <img class="iv-img" src="${imgs[idx]}">
-      <button class="iv-btn iv-next">›</button>
-      <button class="iv-btn iv-close">×</button>
-    </div>
-  `;
-    document.body.appendChild(overlay);
-
-    const imgNode = overlay.querySelector('.iv-img');
-    const prevBtn = overlay.querySelector('.iv-prev');
-    const nextBtn = overlay.querySelector('.iv-next');
-    const closeBtn = overlay.querySelector('.iv-close');
-
-    function render() { imgNode.src = imgs[idx]; }
-
-    prevBtn.onclick = (e) => { e.stopPropagation();
-        idx = (idx - 1 + imgs.length) % imgs.length;
-        render(); };
-    nextBtn.onclick = (e) => { e.stopPropagation();
-        idx = (idx + 1) % imgs.length;
-        render(); };
-    closeBtn.onclick = removeOverlay;
-    overlay.onclick = (e) => { if (e.target === overlay) removeOverlay(); };
-
-    function onKey(e) {
-        if (e.key === 'Escape') removeOverlay();
-        if (e.key === 'ArrowLeft') { idx = (idx - 1 + imgs.length) % imgs.length;
-            render(); }
-        if (e.key === 'ArrowRight') { idx = (idx + 1) % imgs.length;
-            render(); }
+// View image in new tab
+function viewImage(src) {
+    if (src) {
+        window.open(src, '_blank');
     }
-
-    function removeOverlay() {
-        document.removeEventListener('keydown', onKey);
-        overlay.remove();
-    }
-
-    document.addEventListener('keydown', onKey);
 }
